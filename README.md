@@ -14,6 +14,23 @@ dotnet test tests/PoolingDemo.Tests/PoolingDemo.Tests.csproj
 
 The tests cover prewarming and reference reuse, acquire/reset callbacks, rejection of foreign and duplicate releases, the retention limit, and disposal.
 
+## Lifecycle at a glance
+
+```mermaid
+flowchart TD
+    Request[Get an object] --> Cached{Inactive object available?}
+    Cached -->|Yes| Reuse[Pop cached instance]
+    Cached -->|No| Create[Create with factory]
+    Reuse --> Acquire[Run acquire callback]
+    Create --> Acquire
+    Acquire --> Caller[Use in gameplay]
+    Caller --> Reset[Release and reset]
+    Reset --> Room{Retention limit has room?}
+    Room -->|Yes| Cache[Keep inactive for reuse]
+    Room -->|No| Discard[Discard through callback]
+    Cache --> Request
+    Dispose[Dispose pool] --> Cleanup[Discard cached and leased objects]
+```
 ## What the pool guarantees
 
 - It reuses reference instances returned to it.
